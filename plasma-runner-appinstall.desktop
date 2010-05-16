@@ -1,0 +1,18 @@
+[Desktop Entry]
+Name=Application Installation
+Name[ru]=Установка приложений
+Comment=Calendar Events runner
+Comment[ru]=Calendar Events runner
+
+Icon=korganizer
+Type=Service
+
+X-KDE-ServiceTypes=Plasma/Runner
+X-KDE-Library=plasma_runner_appinstall
+X-KDE-PluginInfo-Author=Alexey Noskov
+X-KDE-PluginInfo-Email=alexey.noskov@gmail.com
+X-KDE-PluginInfo-Name=appinstall_runner
+X-KDE-PluginInfo-Version=0.1.0
+X-KDE-PluginInfo-License=GPL
+X-KDE-PluginInfo-EnabledByDefault=true
+X-Ubuntu-Gettext-Domain=desktop_kdesdk
