@@ -1,10 +1,10 @@
 [Desktop Entry]
 Name=Application Installation
 Name[ru]=Установка приложений
-Comment=Calendar Events runner
-Comment[ru]=Calendar Events runner
+Comment=Finds non-installed packaging matching query
+Comment[ru]=Находит неустановленные пакеты с подходящим именем
 
-Icon=korganizer
+Icon=applications-other
 Type=Service
 
 X-KDE-ServiceTypes=Plasma/Runner

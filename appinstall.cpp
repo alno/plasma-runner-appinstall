@@ -48,7 +48,7 @@ AppInstallRunner::AppInstallRunner( QObject *parent, const QVariantList& args )
 
     setObjectName("appinstall_runner");
 
-    icon = KIcon( KIconLoader().loadMimeTypeIcon( KMimeType::mimeType( "text/calendar" )->iconName(), KIconLoader::NoGroup ) );
+    icon = KIcon( KIconLoader().loadIcon( "applications-other", KIconLoader::NoGroup ) );
 
     describeSyntaxes();
 }
@@ -83,6 +83,8 @@ void AppInstallRunner::match( RunnerContext &context ) {
 
     loop.exec();
 
+    int matchCount = 0; // Count of found matches
+
     foreach ( Package * pkg, pkgSet->packages() ) {
         QueryMatch match( this );
         QMap<QString,QVariant> data;
@@ -98,13 +100,28 @@ void AppInstallRunner::match( RunnerContext &context ) {
         if ( pkg->hasDetails() )
             match.setSubtext( pkg->details()->description() );
 
-        qDebug() << pkg->name() << " found";
+        context.addMatch( term, match );
+
+        ++ matchCount;
+
+        if ( matchCount > 10 )
+            break;
     }
 }
 
 void AppInstallRunner::run( const RunnerContext &context, const QueryMatch &match ) {
     Q_UNUSED( context )
 
+    QMap<QString,QVariant> data = match.data().toMap(); // Retrieve match data
+    PackageSet::Ptr pkgSet = data["pkgSet"].value<PackageSet::Ptr>(); // Retrieve package set pointer
+    Package * package = pkgSet->getPackage( data["pkgId"].toString() ); // Retrieve package
+
+    if ( !package ) { // Paranoia: is there no package?
+        qDebug() << "No package in set... Very strange, it should be here";
+        return;
+    }
+
+    Client::instance()->installPackage( true, package ); // Install package
 }
 
 bool AppInstallRunner::isApplicationInstalled( const QString & query ) {
