@@ -18,39 +18,26 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef APPINSTALL_H
-#define APPINSTALL_H
+#include "packageset.h"
 
-#include <Plasma/AbstractRunner>
+PackageSet::PackageSet() {
+}
 
-#include <KIcon>
+PackageSet::~PackageSet() {
+    foreach ( PackageKit::Package* pkg, packageMap.values() )
+        delete pkg;
 
-/**
-*/
-class AppInstallRunner : public Plasma::AbstractRunner {
-    Q_OBJECT
+    packageMap.clear();
+}
 
-public:
-    // Basic Create/Destroy
-    AppInstallRunner( QObject *parent, const QVariantList& args );
-    ~AppInstallRunner();
+void PackageSet::appendPackage( PackageKit::Package* pkg ) {
+    packageMap.insert( pkg->id(), pkg );
+}
 
-    void match(Plasma::RunnerContext &context);
-    void run(const Plasma::RunnerContext &context, const Plasma::QueryMatch &match);
+PackageKit::Package* PackageSet::getPackage( const QString& id ) const {
+    return packageMap[ id ];
+}
 
-    void reloadConfiguration();
-
-private slots:
-
-private:
-
-    bool isApplicationInstalled( const QString & query );
-
-    void describeSyntaxes();
-
-private:
-
-    KIcon icon;
-};
-
-#endif
+QList<PackageKit::Package*> PackageSet::packages() const {
+    return packageMap.values();
+}

@@ -19,19 +19,30 @@
  */
 
 #include "appinstall.h"
+#include "packageset.h"
 
 #include <KDebug>
 #include <KMimeType>
 #include <KIconLoader>
+#include <KService>
+#include <KServiceTypeTrader>
+
+#include <QMap>
+#include <QEventLoop>
 
 // This is the command that links the applet to the .desktop file
 K_EXPORT_PLASMA_RUNNER(appinstall, AppInstallRunner)
 
 using Plasma::QueryMatch;
+using Plasma::RunnerContext;
 using Plasma::RunnerSyntax;
 
-AppInstallRunner::AppInstallRunner(QObject *parent, const QVariantList& args)
-    : Plasma::AbstractRunner(parent, args)
+using namespace PackageKit;
+
+static const Client::Filters packageFilters = Client::FilterApplication | Client::FilterNotInstalled | Client::FilterGui | Client::FilterNotDevelopment;
+
+AppInstallRunner::AppInstallRunner( QObject *parent, const QVariantList& args )
+    : Plasma::AbstractRunner( parent, args )
 {
     Q_UNUSED(args);
 
@@ -54,17 +65,51 @@ void AppInstallRunner::describeSyntaxes() {
     setSyntaxes(syntaxes);
 }
 
-void AppInstallRunner::match( Plasma::RunnerContext &context ) {
+void AppInstallRunner::match( RunnerContext &context ) {
     const QString term = context.query();
 
-    if ( term.length() < 8 )
+    if ( term.length() < 4 )
         return;
 
-   
+    if ( isApplicationInstalled( term ) ) // Return if matching application is already installed
+        return;
+
+    QEventLoop loop;
+    Transaction * tx = Client::instance()->searchName( term, packageFilters ); // Start searching packages
+    PackageSet::Ptr pkgSet( new PackageSet() );
+
+    connect( tx, SIGNAL(package(PackageKit::Package*)), pkgSet.data(), SLOT(appendPackage(PackageKit::Package*)) );
+    connect( tx, SIGNAL(finished(PackageKit::Transaction::ExitStatus, uint)), &loop, SLOT(quit()) );
+
+    loop.exec();
+
+    foreach ( Package * pkg, pkgSet->packages() ) {
+        QueryMatch match( this );
+        QMap<QString,QVariant> data;
+
+        data["pkgSet"] = qVariantFromValue( pkgSet );
+        data["pkgId"] = pkg->id();
+
+        match.setText( i18n("Install package %1", pkg->name() ) );
+        match.setIcon( icon );
+        match.setData( data );
+        match.setId( "install-" + pkg->id() );
+
+        if ( pkg->hasDetails() )
+            match.setSubtext( pkg->details()->description() );
+
+        qDebug() << pkg->name() << " found";
+    }
 }
 
-void AppInstallRunner::run(const Plasma::RunnerContext &context, const Plasma::QueryMatch &match) {
-    Q_UNUSED(context)
+void AppInstallRunner::run( const RunnerContext &context, const QueryMatch &match ) {
+    Q_UNUSED( context )
 
 }
 
+bool AppInstallRunner::isApplicationInstalled( const QString & query ) {
+    if ( !KServiceTypeTrader::self()->query("Application", QString("exist Exec and ('%1' =~ Name)").arg(query)).isEmpty() )
+        return true;
+
+    return false;
+}

@@ -18,39 +18,35 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef APPINSTALL_H
-#define APPINSTALL_H
+#ifndef PACKAGESET_H
+#define PACKAGESET_H
 
-#include <Plasma/AbstractRunner>
+#include <QObject>
+#include <QMap>
+#include <QSharedPointer>
 
-#include <KIcon>
+#include <QPackageKit>
 
-/**
-*/
-class AppInstallRunner : public Plasma::AbstractRunner {
+class PackageSet : public QObject {
     Q_OBJECT
 
 public:
-    // Basic Create/Destroy
-    AppInstallRunner( QObject *parent, const QVariantList& args );
-    ~AppInstallRunner();
+    typedef QSharedPointer<PackageSet> Ptr;
 
-    void match(Plasma::RunnerContext &context);
-    void run(const Plasma::RunnerContext &context, const Plasma::QueryMatch &match);
+public:
+    PackageSet();
+    virtual ~PackageSet();
 
-    void reloadConfiguration();
+    PackageKit::Package * getPackage( const QString & id ) const;
+    QList<PackageKit::Package*> packages() const;
 
-private slots:
-
-private:
-
-    bool isApplicationInstalled( const QString & query );
-
-    void describeSyntaxes();
+public slots:
+    void appendPackage( PackageKit::Package * pkg );
 
 private:
-
-    KIcon icon;
+    QMap<QString,PackageKit::Package *> packageMap;
 };
 
-#endif
+Q_DECLARE_METATYPE( PackageSet::Ptr );
+
+#endif // PACKAGESET_H
